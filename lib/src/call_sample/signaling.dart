@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import 'random_string.dart';
@@ -39,8 +40,10 @@ class Signaling {
   JsonEncoder _encoder = JsonEncoder();
   JsonDecoder _decoder = JsonDecoder();
   String _selfId = randomNumeric(6);
+  //String _selfId="oppofarhan";
   SimpleWebSocket? _socket;
   var _host;
+  int videoId=1;
   var _port = 8086;
   var _turnCredential;
   Map<String, Session> _sessions = {};
@@ -152,22 +155,31 @@ class Signaling {
 
   void onMessage(message) async {
     Map<String, dynamic> mapData = message;
-    var data = mapData['data'];
-
+    var data = mapData['data'] ;
+            debugPrint("list of peers data : ${data}");
     switch (mapData['type']) {
       case 'peers':
         {
-          List<dynamic> peers = data;
+          debugPrint("AllDataPeer : ${data}");
+          List<dynamic>  _commonList=[];
+
+          List<dynamic> peer = data.map((e){if(e["video_id"]==videoId){
+            return _commonList.add(e);
+          };}).toList();
+          debugPrint("commonList ${_commonList}");
+         // debugPrint("video_is is here $peer");
+          List<dynamic> peers=data;
           if (onPeersUpdate != null) {
             Map<String, dynamic> event = Map<String, dynamic>();
             event['self'] = _selfId;
-            event['peers'] = peers;
+            event['peers'] = _commonList;
             onPeersUpdate?.call(event);
           }
         }
         break;
       case 'offer':
         {
+          debugPrint("AllData  During offer");
           var peerId = data['from'];
           var description = data['description'];
           var media = data['media'];
@@ -256,7 +268,8 @@ class Signaling {
     var url = 'https://$_host:$_port/ws';
     _socket = SimpleWebSocket(url);
 
-    print('connect to $url');
+    //print('connect to $url');
+    //print('checkSocket ${_socket!.onMessage.toString()}');
 
     if (_turnCredential == null) {
       try {
@@ -286,7 +299,8 @@ class Signaling {
       _send('new', {
         'name': DeviceInfo.label,
         'id': _selfId,
-        'user_agent': DeviceInfo.userAgent
+        'user_agent': DeviceInfo.userAgent,
+        "video_id":1,
       });
     };
 

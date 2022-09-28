@@ -3,6 +3,8 @@ import 'dart:math';
 import 'dart:convert';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 class SimpleWebSocket {
   String _url;
   var _socket;
@@ -39,6 +41,7 @@ class SimpleWebSocket {
 
   Future<WebSocket> _connectForSelfSignedCert(url) async {
     try {
+
       Random r = new Random();
       String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
       HttpClient client = HttpClient(context: SecurityContext());
@@ -59,13 +62,15 @@ class SimpleWebSocket {
 
       HttpClientResponse response = await request.close();
       // ignore: close_sinks
+
       Socket socket = await response.detachSocket();
       var webSocket = WebSocket.fromUpgradedSocket(
         socket,
         protocol: 'signaling',
         serverSide: false,
       );
-
+      Future.delayed(Duration(seconds: 1));
+     // debugPrint("data Response :${webSocket.first}");
       return webSocket;
     } catch (e) {
       throw e;

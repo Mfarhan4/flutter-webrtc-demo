@@ -21,7 +21,8 @@ enum DialogDemoAction {
 
 class _MyAppState extends State<MyApp> {
   List<RouteItem> items = [];
-  String _server = '';
+  String _server = '192.168.10.4';
+
   late SharedPreferences _prefs;
 
   bool _datachannel = false;
@@ -47,6 +48,12 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        floatingActionButton: FloatingActionButton(onPressed: (){
+          setState((){
+            _server="192.168.100.115";
+            debugPrint("$_server");
+          });
+        },child: Icon(Icons.add),),
           appBar: AppBar(
             title: Text('Flutter-WebRTC example'),
           ),
@@ -75,6 +82,8 @@ class _MyAppState extends State<MyApp> {
     ).then<void>((T? value) {
       // The value passed to Navigator.pop() or null.
       if (value != null) {
+
+        debugPrint("Value Not null ${value}");
         if (value == DialogDemoAction.connect) {
           _prefs.setString('server', _server);
           Navigator.push(
@@ -85,6 +94,9 @@ class _MyAppState extends State<MyApp> {
                       : CallSample(host: _server)));
         }
       }
+      else{
+        debugPrint("Value is  null ${value}");
+      }
     });
   }
 
@@ -94,9 +106,10 @@ class _MyAppState extends State<MyApp> {
         child: AlertDialog(
             title: const Text('Enter server address:'),
             content: TextField(
+            //  controller:_server ,
               onChanged: (String text) {
                 setState(() {
-                  _server = text;
+                //  _server = text;
                 });
               },
               decoration: InputDecoration(

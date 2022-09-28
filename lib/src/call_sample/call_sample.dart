@@ -31,6 +31,7 @@ class _CallSampleState extends State<CallSample> {
     super.initState();
     initRenderers();
     _connect();
+
   }
 
   initRenderers() async {
@@ -49,6 +50,7 @@ class _CallSampleState extends State<CallSample> {
   void _connect() async {
     _signaling ??= Signaling(widget.host)..connect();
     _signaling?.onSignalingStateChange = (SignalingState state) {
+
       switch (state) {
         case SignalingState.ConnectionClosed:
         case SignalingState.ConnectionError:
@@ -240,6 +242,12 @@ class _CallSampleState extends State<CallSample> {
   }
 
   @override
+
+  Future devices(List<dynamic> list)async {
+
+    debugPrint("listInitilize ${list.first}");
+
+  }
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -289,7 +297,7 @@ class _CallSampleState extends State<CallSample> {
                         margin: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height,
-                        child: RTCVideoView(_remoteRenderer),
+                        child: RTCVideoView(_remoteRenderer,mirror: true,),
                         decoration: BoxDecoration(color: Colors.black54),
                       )),
                   Positioned(
