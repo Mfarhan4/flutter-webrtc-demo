@@ -20,7 +20,8 @@ class _CallSampleState extends State<CallSample> {
   RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   bool _inCalling = false;
   Session? _session;
-
+  bool videoCall=false;
+  String callType="";
   bool _waitAccept = false;
 
   // ignore: unused_element
@@ -177,9 +178,10 @@ class _CallSampleState extends State<CallSample> {
     );
   }
 
-  _invitePeer(BuildContext context, String peerId, bool useScreen) async {
+  _invitePeer(BuildContext context, String peerId, bool useScreen,String callType) async {
+    debugPrint("callTypeCheck :$callType");
     if (_signaling != null && peerId != _selfId) {
-      _signaling?.invite(peerId, 'video', useScreen);
+      _signaling?.invite(peerId, 'video', useScreen, callType);
     }
   }
 
@@ -216,6 +218,7 @@ class _CallSampleState extends State<CallSample> {
         title: Text(self
             ? peer['name'] + ', ID: ${peer['id']} ' + ' [Your self]'
             : peer['name'] + ', ID: ${peer['id']} '),
+      //  subtitle:Text("${peer['callType']}"),
         onTap: null,
         trailing: SizedBox(
             width: 100.0,
@@ -225,15 +228,37 @@ class _CallSampleState extends State<CallSample> {
                   IconButton(
                     icon: Icon(self ? Icons.close : Icons.videocam,
                         color: self ? Colors.grey : Colors.black),
-                    onPressed: () => _invitePeer(context, peer['id'], false),
+                    onPressed: (){
+                      setState(() {
+                        callType="video";
+                        videoCall=true;
+                      });
+                      _invitePeer(context, peer['id'], false,callType);
+
+
+                      },
                     tooltip: 'Video calling',
                   ),
                   IconButton(
-                    icon: Icon(self ? Icons.close : Icons.screen_share,
+                    icon: Icon(self ? Icons.close : Icons.call,
                         color: self ? Colors.grey : Colors.black),
-                    onPressed: () => _invitePeer(context, peer['id'], true),
-                    tooltip: 'Screen sharing',
-                  )
+                    onPressed: (){
+                      setState(() {
+                        callType="audio";
+                        videoCall=false;
+                      });
+                      _invitePeer(context, peer['id'], false,callType);
+
+
+                      },
+                    tooltip: 'audio calling',
+                  ),
+                  // IconButton(
+                  //   icon: Icon(self ? Icons.close : Icons.screen_share,
+                  //       color: self ? Colors.grey : Colors.black),
+                  //   onPressed: () => _invitePeer(context, peer['id'], true),
+                  //   tooltip: 'Screen sharing',
+                  // )
                 ])),
         subtitle: Text('[' + peer['user_agent'] + ']'),
       ),
@@ -264,7 +289,7 @@ class _CallSampleState extends State<CallSample> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _inCalling
           ? SizedBox(
-              width: 200.0,
+              width: 250.0,
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -273,7 +298,12 @@ class _CallSampleState extends State<CallSample> {
                       onPressed: _switchCamera,
                     ),
                     FloatingActionButton(
-                      onPressed: _hangUp,
+                    //  onPressed: _hangUp,
+                      onPressed: (){
+                        _hangUp();
+                        debugPrint("callType : ${_signaling?.callType}");
+                        debugPrint("callType : ${videoCall}");
+                      },
                       tooltip: 'Hangup',
                       child: Icon(Icons.call_end),
                       backgroundColor: Colors.pink,
@@ -281,11 +311,19 @@ class _CallSampleState extends State<CallSample> {
                     FloatingActionButton(
                       child: const Icon(Icons.mic_off),
                       onPressed: _muteMic,
+                    ),
+                    FloatingActionButton(
+                      child: const Icon(Icons.ac_unit),
+                      onPressed: (){
+                        debugPrint("callType : ${_signaling?.callType}");
+                        debugPrint("callType : ${videoCall}");
+                      },
                     )
                   ]))
           : null,
-      body: _inCalling
-          ? OrientationBuilder(builder: (context, orientation) {
+      body:
+      _inCalling
+          ?  _signaling!.callType=="video"? OrientationBuilder(builder: (context, orientation) {
               return Container(
                 child: Stack(children: <Widget>[
                   Positioned(
@@ -313,7 +351,35 @@ class _CallSampleState extends State<CallSample> {
                   ),
                 ]),
               );
-            })
+            }):videoCall?OrientationBuilder(builder: (context, orientation) {
+        return Container(
+          child: Stack(children: <Widget>[
+            Positioned(
+                left: 0.0,
+                right: 0.0,
+                top: 0.0,
+                bottom: 0.0,
+                child: Container(
+                  margin: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  child: RTCVideoView(_remoteRenderer,mirror: true,),
+                  decoration: BoxDecoration(color: Colors.black54),
+                )),
+            Positioned(
+              left: 20.0,
+              top: 20.0,
+              child: Container(
+                width: orientation == Orientation.portrait ? 90.0 : 120.0,
+                height:
+                orientation == Orientation.portrait ? 120.0 : 90.0,
+                child: RTCVideoView(_localRenderer, mirror: true),
+                decoration: BoxDecoration(color: Colors.black54),
+              ),
+            ),
+          ]),
+        );
+      }):Container(color: Colors.grey,)
           : ListView.builder(
               shrinkWrap: true,
               padding: const EdgeInsets.all(0.0),

@@ -21,7 +21,7 @@ enum DialogDemoAction {
 
 class _MyAppState extends State<MyApp> {
   List<RouteItem> items = [];
-  String _server = '192.168.10.4';
+  String _server = '192.168.10.13';
 
   late SharedPreferences _prefs;
 
@@ -50,7 +50,7 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         floatingActionButton: FloatingActionButton(onPressed: (){
           setState((){
-            _server="192.168.100.115";
+            _server="192.168.10.13";
             debugPrint("$_server");
           });
         },child: Icon(Icons.add),),

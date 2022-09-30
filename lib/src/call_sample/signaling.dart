@@ -36,7 +36,7 @@ class Session {
 
 class Signaling {
   Signaling(this._host);
-
+ String? callType;
   JsonEncoder _encoder = JsonEncoder();
   JsonDecoder _decoder = JsonDecoder();
   String _selfId = randomNumeric(6);
@@ -110,7 +110,7 @@ class Signaling {
     }
   }
 
-  void invite(String peerId, String media, bool useScreen) async {
+  void invite(String peerId, String media, bool useScreen,String callType) async {
     var sessionId = _selfId + '-' + peerId;
     Session session = await _createSession(null,
         peerId: peerId,
@@ -121,7 +121,7 @@ class Signaling {
     if (media == 'data') {
       _createDataChannel(session);
     }
-    _createOffer(session, media);
+    _createOffer(session, media,callType);
     onCallStateChange?.call(session, CallState.CallStateNew);
     onCallStateChange?.call(session, CallState.CallStateInvite);
   }
@@ -137,7 +137,7 @@ class Signaling {
     }
   }
 
-  void accept(String sessionId) {
+  void accept(String sessionId,) {
     var session = _sessions[sessionId];
     if (session == null) {
       return;
@@ -179,7 +179,8 @@ class Signaling {
         break;
       case 'offer':
         {
-          debugPrint("AllData  During offer");
+          debugPrint("AllData  During offer : ${data}");
+           callType=data["call_type"];
           var peerId = data['from'];
           var description = data['description'];
           var media = data['media'];
@@ -208,9 +209,12 @@ class Signaling {
         break;
       case 'answer':
         {
+          debugPrint("answer ");
+          debugPrint("answer Data is ${data["description"]}");
           var description = data['description'];
           var sessionId = data['session_id'];
           var session = _sessions[sessionId];
+          debugPrint("session offer is $session");
           session?.pc?.setRemoteDescription(
               RTCSessionDescription(description['sdp'], description['type']));
           onCallStateChange?.call(session!, CallState.CallStateConnected);
@@ -305,7 +309,8 @@ class Signaling {
     };
 
     _socket?.onMessage = (message) {
-      print('Received data: ' + message);
+      print('Received data This: ' + message);
+    //  debugPrint("call_type receive ${message["data"]["call_type"]}");
       onMessage(_decoder.convert(message));
     };
 
@@ -425,6 +430,7 @@ class Signaling {
         print('onIceCandidate: complete!');
         return;
       }
+      debugPrint("answer is also accept");
       // This delay is needed to allow enough time to try an ICE candidate
       // before skipping to the next one. 1 second is just an heuristic value
       // and should be thoroughly tested in your own environment.
@@ -477,12 +483,14 @@ class Signaling {
     _addDataChannel(session, channel);
   }
 
-  Future<void> _createOffer(Session session, String media) async {
+  Future<void> _createOffer(Session session, String media,String callType) async {
     try {
+      debugPrint("media is  $media");
       RTCSessionDescription s =
           await session.pc!.createOffer(media == 'data' ? _dcConstraints : {});
       await session.pc!.setLocalDescription(s);
       _send('offer', {
+        "call_type":callType,
         'to': session.pid,
         'from': _selfId,
         'description': {'sdp': s.sdp, 'type': s.type},
@@ -496,9 +504,13 @@ class Signaling {
 
   Future<void> _createAnswer(Session session, String media) async {
     try {
+
+
+      debugPrint("accetp offer");
       RTCSessionDescription s =
           await session.pc!.createAnswer(media == 'data' ? _dcConstraints : {});
       await session.pc!.setLocalDescription(s);
+
       _send('answer', {
         'to': session.pid,
         'from': _selfId,
@@ -514,6 +526,7 @@ class Signaling {
     var request = Map();
     request["type"] = event;
     request["data"] = data;
+    debugPrint("event is ${event}");
     _socket?.send(_encoder.convert(request));
   }
 
